@@ -1,0 +1,5 @@
+struct command
+{
+    double limit_vel;
+    double limit_acc;
+}
