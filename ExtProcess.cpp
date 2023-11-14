@@ -1,4 +1,5 @@
 #include "ExtProcess.h"
+#include <QFile>
 #include <QDebug>
 
 ExtProcess::ExtProcess(QObject *parent)
@@ -74,6 +75,7 @@ ExtProcess::ExtProcess(QObject *parent)
     connect(timer, SIGNAL(timeout()), this, SLOT(onTimer()));
     timer->start(100);
     proc = new QProcess();
+
 }
 
 ExtProcess::~ExtProcess(){
@@ -186,10 +188,56 @@ void ExtProcess::onTimer(){
                 startProcessAt("git reset --hard origin/master",QString::fromUtf8(temp));
             }else if(cur_cmd.cmd == PROCESS_CMD_GIT_UPDATE){
 
+            }else if(cur_cmd.cmd == PROCESS_CMD_ZIP){
+                char temp[100];
+                memcpy(temp, cur_cmd.params,100);
+                QString path = QString::fromUtf8(temp);
+
+            }else if(cur_cmd.cmd == PROCESS_CMD_UNZIP){
+                char temp[100];
+                memcpy(temp, cur_cmd.params,100);
+                QString zippath = QString::fromUtf8(temp);
+                char temp2[100];
+                memcpy(temp2, cur_cmd.params2,100);
+                QString folderpath = QString::fromUtf8(temp2);
+                if(unzip(zippath, folderpath)){
+                    result.result = PROCESS_RETURN_DONE;
+                }else{
+                    result.result = PROCESS_RETURN_ERROR;
+                }
             }
             set_return(result);
         }
     }
+}
+
+bool ExtProcess::unzip(QString zippath, QString folderpath){
+    Return temp_output;
+    temp_output.result = PROCESS_RETURN_DONE;
+    temp_output.command = cur_cmd.cmd;
+    QFile zip(zippath);
+    QFile folder(folderpath);
+    if(zip.exists()){
+        QStringList files = zipper.extractDir(zippath, folderpath);
+        if(files.size() > 0){
+            foreach(QString exfile, files){
+                zipper.extractDir(exfile, exfile.split(".")[0]);
+            }
+            return true;
+        }else{
+            qDebug() << "Extract Failed : " << zippath;
+            return false;
+            temp_output.result = PROCESS_RETURN_ERROR;
+        }
+    }else{
+        qDebug() << "No Zip File Found : " << zippath;
+        return false;
+        temp_output.result = PROCESS_RETURN_ERROR;
+    }
+//    set_return(temp_output);
+}
+
+void ExtProcess::zip(QString folderpath, QString zippath){
 
 }
 
@@ -213,6 +261,17 @@ void ExtProcess::startProcess(QString cmd){
     connect(proc,SIGNAL(readyReadStandardOutput()),this,SLOT(output()));
     connect(proc,SIGNAL(readyReadStandardError()),this,SLOT(error()));
 }
+
+void ExtProcess::startProcessAt(QString cmd, QString path){
+    qDebug() << "startProcessAt : " << cmd << path;
+    proc = new QProcess();
+    proc->setWorkingDirectory(path);
+    proc->start(cmd);
+
+    connect(proc,SIGNAL(readyReadStandardOutput()),this,SLOT(output()));
+    connect(proc,SIGNAL(readyReadStandardError()),this,SLOT(error()));
+}
+
 
 void ExtProcess::timeout(){
     Return temp_output;
@@ -384,6 +443,10 @@ void ExtProcess::output(){
         set_return(temp_output);
         proc->close();
     }else if(cur_cmd.cmd == PROCESS_CMD_GIT_PULL){
+
+    }else if(cur_cmd.cmd == PROCESS_CMD_ZIP){
+
+    }else if(cur_cmd.cmd == PROCESS_CMD_UNZIP){
 
     }
 

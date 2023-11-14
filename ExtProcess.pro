@@ -16,13 +16,54 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 SOURCES += \
         ExtProcess.cpp \
-        main.cpp
+        main.cpp\
+    quazip/JlCompress.cpp \
+    quazip/qioapi.cpp \
+    quazip/quaadler32.cpp \
+    quazip/quachecksum32.cpp \
+    quazip/quacrc32.cpp \
+    quazip/quagzipfile.cpp \
+    quazip/quaziodevice.cpp \
+    quazip/quazip.cpp \
+    quazip/quazipdir.cpp \
+    quazip/quazipfile.cpp \
+    quazip/quazipfileinfo.cpp \
+    quazip/quazipnewinfo.cpp \
+    quazip/unzip.c \
+    quazip/zip.c \
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
+INCLUDEPATH += /usr/local/include/
+LIBS += -L/usr/local/lib/
+INCLUDEPATH += /usr/local/include/QuaZip-Qt5-1.4
+LIBS += -lz
+
 HEADERS += \
     ExtProcess.h \
-    GlobalHeader.h
+    GlobalHeader.h \
+    quazip/JlCompress.h \
+    quazip/ioapi.h \
+    quazip/minizip_crypt.h \
+    quazip/quaadler32.h \
+    quazip/quachecksum32.h \
+    quazip/quacrc32.h \
+    quazip/quagzipfile.h \
+    quazip/quaziodevice.h \
+    quazip/quazip.h \
+    quazip/quazip_global.h \
+    quazip/quazip_qt_compat.h \
+    quazip/quazipdir.h \
+    quazip/quazipfile.h \
+    quazip/quazipfileinfo.h \
+    quazip/quazipnewinfo.h \
+    quazip/unzip.h \
+    quazip/zip.h \
+
+
+DISTFILES += \
+    quazip/QuaZipConfig.cmake.in \
+    quazip/quazip.pc.cmakein

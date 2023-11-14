@@ -6,6 +6,9 @@
 #include <QTimer>
 #include <QSharedMemory>
 #include "GlobalHeader.h"
+#include "zlib.h"
+#include "quazip/quazip.h"
+#include "quazip/JlCompress.h"
 
 
 class ExtProcess : public QObject
@@ -34,7 +37,9 @@ public:
         PROCESS_CMD_CHECK_CONNECTION,
         PROCESS_CMD_GIT_PULL,
         PROCESS_CMD_GIT_RESET,
-        PROCESS_CMD_GIT_UPDATE
+        PROCESS_CMD_GIT_UPDATE,
+        PROCESS_CMD_ZIP,
+        PROCESS_CMD_UNZIP
 
     };
 
@@ -107,6 +112,9 @@ public:
     void getSystemVolume();
     void getWifiList();
 
+    bool unzip(QString zippath, QString folderpath);
+    void zip(QString folderpath, QString zippath);
+
 private slots:
     void onTimer();
     void output();
@@ -116,6 +124,7 @@ private slots:
 private:
     int tick = 0;
     Command cur_cmd;
+    JlCompress zipper;
 
     ST_WIFI_STATE cur_wifi;
 
