@@ -54,6 +54,7 @@ OBJECTS_DIR   = ./
 
 SOURCES       = ../ExtProcess.cpp \
 		../main.cpp \
+		../Logger.cpp \
 		../quazip/JlCompress.cpp \
 		../quazip/qioapi.cpp \
 		../quazip/quaadler32.cpp \
@@ -68,11 +69,13 @@ SOURCES       = ../ExtProcess.cpp \
 		../quazip/quazipnewinfo.cpp \
 		../quazip/unzip.c \
 		../quazip/zip.c moc_ExtProcess.cpp \
+		moc_Logger.cpp \
 		moc_quagzipfile.cpp \
 		moc_quaziodevice.cpp \
 		moc_quazipfile.cpp
 OBJECTS       = ExtProcess.o \
 		main.o \
+		Logger.o \
 		JlCompress.o \
 		qioapi.o \
 		quaadler32.o \
@@ -88,6 +91,7 @@ OBJECTS       = ExtProcess.o \
 		unzip.o \
 		zip.o \
 		moc_ExtProcess.o \
+		moc_Logger.o \
 		moc_quagzipfile.o \
 		moc_quaziodevice.o \
 		moc_quazipfile.o
@@ -180,6 +184,7 @@ DIST          = ../quazip/QuaZipConfig.cmake.in \
 		/usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/lex.prf \
 		../../ExtProcess.pro ../ExtProcess.h \
 		../GlobalHeader.h \
+		../Logger.h \
 		../quazip/JlCompress.h \
 		../quazip/ioapi.h \
 		../quazip/minizip_crypt.h \
@@ -198,6 +203,7 @@ DIST          = ../quazip/QuaZipConfig.cmake.in \
 		../quazip/unzip.h \
 		../quazip/zip.h ../ExtProcess.cpp \
 		../main.cpp \
+		../Logger.cpp \
 		../quazip/JlCompress.cpp \
 		../quazip/qioapi.cpp \
 		../quazip/quaadler32.cpp \
@@ -411,8 +417,8 @@ distdir: FORCE
 	@test -d $(DISTDIR) || mkdir -p $(DISTDIR)
 	$(COPY_FILE) --parents $(DIST) $(DISTDIR)/
 	$(COPY_FILE) --parents /usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/data/dummy.cpp $(DISTDIR)/
-	$(COPY_FILE) --parents ../ExtProcess.h ../GlobalHeader.h ../quazip/JlCompress.h ../quazip/ioapi.h ../quazip/minizip_crypt.h ../quazip/quaadler32.h ../quazip/quachecksum32.h ../quazip/quacrc32.h ../quazip/quagzipfile.h ../quazip/quaziodevice.h ../quazip/quazip.h ../quazip/quazip_global.h ../quazip/quazip_qt_compat.h ../quazip/quazipdir.h ../quazip/quazipfile.h ../quazip/quazipfileinfo.h ../quazip/quazipnewinfo.h ../quazip/unzip.h ../quazip/zip.h $(DISTDIR)/
-	$(COPY_FILE) --parents ../ExtProcess.cpp ../main.cpp ../quazip/JlCompress.cpp ../quazip/qioapi.cpp ../quazip/quaadler32.cpp ../quazip/quachecksum32.cpp ../quazip/quacrc32.cpp ../quazip/quagzipfile.cpp ../quazip/quaziodevice.cpp ../quazip/quazip.cpp ../quazip/quazipdir.cpp ../quazip/quazipfile.cpp ../quazip/quazipfileinfo.cpp ../quazip/quazipnewinfo.cpp ../quazip/unzip.c ../quazip/zip.c $(DISTDIR)/
+	$(COPY_FILE) --parents ../ExtProcess.h ../GlobalHeader.h ../Logger.h ../quazip/JlCompress.h ../quazip/ioapi.h ../quazip/minizip_crypt.h ../quazip/quaadler32.h ../quazip/quachecksum32.h ../quazip/quacrc32.h ../quazip/quagzipfile.h ../quazip/quaziodevice.h ../quazip/quazip.h ../quazip/quazip_global.h ../quazip/quazip_qt_compat.h ../quazip/quazipdir.h ../quazip/quazipfile.h ../quazip/quazipfileinfo.h ../quazip/quazipnewinfo.h ../quazip/unzip.h ../quazip/zip.h $(DISTDIR)/
+	$(COPY_FILE) --parents ../ExtProcess.cpp ../main.cpp ../Logger.cpp ../quazip/JlCompress.cpp ../quazip/qioapi.cpp ../quazip/quaadler32.cpp ../quazip/quachecksum32.cpp ../quazip/quacrc32.cpp ../quazip/quagzipfile.cpp ../quazip/quaziodevice.cpp ../quazip/quazip.cpp ../quazip/quazipdir.cpp ../quazip/quazipfile.cpp ../quazip/quazipfileinfo.cpp ../quazip/quazipnewinfo.cpp ../quazip/unzip.c ../quazip/zip.c $(DISTDIR)/
 
 
 clean: compiler_clean 
@@ -449,14 +455,29 @@ compiler_moc_predefs_clean:
 moc_predefs.h: /usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/data/dummy.cpp
 	g++ -pipe -O2 -std=gnu++11 -Wall -W -dM -E -o moc_predefs.h /usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/data/dummy.cpp
 
-compiler_moc_header_make_all: moc_ExtProcess.cpp moc_quagzipfile.cpp moc_quaziodevice.cpp moc_quazipfile.cpp
+compiler_moc_header_make_all: moc_ExtProcess.cpp moc_Logger.cpp moc_quagzipfile.cpp moc_quaziodevice.cpp moc_quazipfile.cpp
 compiler_moc_header_clean:
-	-$(DEL_FILE) moc_ExtProcess.cpp moc_quagzipfile.cpp moc_quaziodevice.cpp moc_quazipfile.cpp
+	-$(DEL_FILE) moc_ExtProcess.cpp moc_Logger.cpp moc_quagzipfile.cpp moc_quaziodevice.cpp moc_quazipfile.cpp
 moc_ExtProcess.cpp: ../ExtProcess.h \
 		../GlobalHeader.h \
+		../quazip/quazip.h \
+		../quazip/quazip_qt_compat.h \
+		../quazip/zip.h \
+		../quazip/ioapi.h \
+		../quazip/unzip.h \
+		../quazip/quazip_global.h \
+		../quazip/quazipfileinfo.h \
+		../quazip/JlCompress.h \
+		../quazip/quazipfile.h \
+		../quazip/quazipnewinfo.h \
 		moc_predefs.h \
 		/usr/lib/qt5/bin/moc
 	/usr/lib/qt5/bin/moc $(DEFINES) --include /home/rainbow/ExtProcess/build/moc_predefs.h -I/usr/lib/x86_64-linux-gnu/qt5/mkspecs/linux-g++ -I/home/rainbow/ExtProcess -I/usr/local/include -I/usr/local/include/QuaZip-Qt5-1.4 -I/usr/include/x86_64-linux-gnu/qt5 -I/usr/include/x86_64-linux-gnu/qt5/QtCore -I. -I/usr/include/c++/9 -I/usr/include/x86_64-linux-gnu/c++/9 -I/usr/include/c++/9/backward -I/usr/lib/gcc/x86_64-linux-gnu/9/include -I/usr/local/include -I/usr/include/x86_64-linux-gnu -I/usr/include ../ExtProcess.h -o moc_ExtProcess.cpp
+
+moc_Logger.cpp: ../Logger.h \
+		moc_predefs.h \
+		/usr/lib/qt5/bin/moc
+	/usr/lib/qt5/bin/moc $(DEFINES) --include /home/rainbow/ExtProcess/build/moc_predefs.h -I/usr/lib/x86_64-linux-gnu/qt5/mkspecs/linux-g++ -I/home/rainbow/ExtProcess -I/usr/local/include -I/usr/local/include/QuaZip-Qt5-1.4 -I/usr/include/x86_64-linux-gnu/qt5 -I/usr/include/x86_64-linux-gnu/qt5/QtCore -I. -I/usr/include/c++/9 -I/usr/include/x86_64-linux-gnu/c++/9 -I/usr/include/c++/9/backward -I/usr/lib/gcc/x86_64-linux-gnu/9/include -I/usr/local/include -I/usr/include/x86_64-linux-gnu -I/usr/include ../Logger.h -o moc_Logger.cpp
 
 moc_quagzipfile.cpp: ../quazip/quagzipfile.h \
 		../quazip/quazip_global.h \
@@ -498,12 +519,36 @@ compiler_clean: compiler_moc_predefs_clean compiler_moc_header_clean
 ####### Compile
 
 ExtProcess.o: ../ExtProcess.cpp ../ExtProcess.h \
-		../GlobalHeader.h
+		../GlobalHeader.h \
+		../quazip/quazip.h \
+		../quazip/quazip_qt_compat.h \
+		../quazip/zip.h \
+		../quazip/ioapi.h \
+		../quazip/unzip.h \
+		../quazip/quazip_global.h \
+		../quazip/quazipfileinfo.h \
+		../quazip/JlCompress.h \
+		../quazip/quazipfile.h \
+		../quazip/quazipnewinfo.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o ExtProcess.o ../ExtProcess.cpp
 
 main.o: ../main.cpp ../ExtProcess.h \
-		../GlobalHeader.h
+		../GlobalHeader.h \
+		../quazip/quazip.h \
+		../quazip/quazip_qt_compat.h \
+		../quazip/zip.h \
+		../quazip/ioapi.h \
+		../quazip/unzip.h \
+		../quazip/quazip_global.h \
+		../quazip/quazipfileinfo.h \
+		../quazip/JlCompress.h \
+		../quazip/quazipfile.h \
+		../quazip/quazipnewinfo.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o main.o ../main.cpp
+
+Logger.o: ../Logger.cpp ../Logger.h \
+		../GlobalHeader.h
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o Logger.o ../Logger.cpp
 
 JlCompress.o: ../quazip/JlCompress.cpp ../quazip/JlCompress.h \
 		../quazip/quazip.h \
@@ -598,6 +643,9 @@ zip.o: ../quazip/zip.c ../quazip/zip.h \
 
 moc_ExtProcess.o: moc_ExtProcess.cpp 
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o moc_ExtProcess.o moc_ExtProcess.cpp
+
+moc_Logger.o: moc_Logger.cpp 
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o moc_Logger.o moc_Logger.cpp
 
 moc_quagzipfile.o: moc_quagzipfile.cpp 
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o moc_quagzipfile.o moc_quagzipfile.cpp

@@ -15,60 +15,54 @@ ExtProcess::ExtProcess(QObject *parent)
         if (!shm_command.create(sizeof(Command), QSharedMemory::ReadWrite) && shm_command.error() == QSharedMemory::AlreadyExists)
         {
             if(shm_command.attach()){
-                qDebug() << "[ExtProcess] SharedMemory is already exist. attach success. ";
-//                if(shm_command.isAttached()){
-//                    shm_command.lock();
-//                    memset(shm_command.data(),0,sizeof(shm_command.data()));
-//                    shm_command.unlock();
-//                    qDebug() << "[ExtProcess] Clear ShardMemory";
-//                }
+                plog->write("[CONSTRUCTOR] SharedMemory is already exist. attach success.");
             }else{
-                qDebug() << "[ExtProcess] SharedMemory is already exist. attach failed. ";
+                plog->write("[CONSTRUCTOR] SharedMemory is already exist. But attach failed.");
             }
         }
         else
         {
-            qDebug() << "[ExtProcess] SharedMemory is created. size : "+QString::number(sizeof(Command));
+            plog->write("[CONSTRUCTOR] SharedMemory is created. size : "+QString::number(sizeof(Command)));
         }
     }
     if(!shm_return.isAttached()){
         if (!shm_return.create(sizeof(Return), QSharedMemory::ReadWrite) && shm_return.error() == QSharedMemory::AlreadyExists)
         {
             if(shm_return.attach()){
-                qDebug() << "[ExtProcess] SharedMemory(Return) is already exist. attach success. ";
+                plog->write("[CONSTRUCTOR] SharedMemory(Return) is already exist. attach success");
                 if(shm_return.isAttached()){
                     shm_return.lock();
                     memset(shm_return.data(),0,sizeof(shm_return.data()));
                     shm_return.unlock();
-                    qDebug() << "[ExtProcess] Clear ShardMemory(Return)";
+                    plog->write("[CONSTRUCTOR] SharedMemory(Return) Clear");
                 }
             }else{
-                qDebug() << "[ExtProcess] SharedMemory(Return) is already exist. attach failed. ";
+                plog->write("[CONSTRUCTOR] SharedMemory(Return) is already exist. But attach failed");
             }
         }
         else
         {
-            qDebug() << "[ExtProcess] SharedMemory(Return) is created. size : "+QString::number(sizeof(Return));
+            plog->write("[CONSTRUCTOR] SharedMemory(Return) is created. size : "+QString::number(sizeof(Return)));
         }
     }
     if(!shm_wifilist.isAttached()){
         if (!shm_wifilist.create(sizeof(WifiList), QSharedMemory::ReadWrite) && shm_wifilist.error() == QSharedMemory::AlreadyExists)
         {
             if(shm_wifilist.attach()){
-                qDebug() << "[ExtProcess] SharedMemory(WifiList) is already exist. attach success. ";
+                plog->write("[CONSTRUCTOR] SharedMemory(WifiList) is already exist. attach success");
                 if(shm_wifilist.isAttached()){
                     shm_wifilist.lock();
                     memset(shm_wifilist.data(),0,sizeof(shm_wifilist.data()));
                     shm_wifilist.unlock();
-                    qDebug() << "[ExtProcess] Clear ShardMemory(WifiList)";
+                    plog->write("[CONSTRUCTOR] SharedMemory(WifiList) Clear");
                 }
             }else{
-                qDebug() << "[ExtProcess] SharedMemory(WifiList) is already exist. attach failed. ";
+                plog->write("[CONSTRUCTOR] SharedMemory(WifiList) is already exist. but attach failed");
             }
         }
         else
         {
-            qDebug() << "[ExtProcess] SharedMemory(WifiList) is created. size : "+QString::number(sizeof(WifiList));
+            plog->write("[CONSTRUCTOR] SharedMemory(WifiList) is created. size : "+QString::number(sizeof(WifiList)));
         }
     }
     timer = new QTimer();
@@ -96,6 +90,7 @@ void ExtProcess::onTimer(){
             }
         }
         if(!already_in){
+            plog->write("[ONTIMER] New Command in : "+QString::number(_cmd.cmd));
             cmd_list.push_back(_cmd);
         }
         prev_tick = _cmd.tick;
@@ -111,7 +106,7 @@ void ExtProcess::onTimer(){
             result.result = PROCESS_RETURN_ACCEPT;
             result.command = cur_cmd.cmd;
 
-            qDebug() << "Set Command : " << cur_cmd.cmd << cmd_list.size();
+            plog->write("[ONTIMER] Set Command : "+QString::number(_cmd.cmd) + " (list size = "+QString::number(cmd_list.size())+")");
 
             if(cur_cmd.cmd == PROCESS_CMD_SET_SYSTEM_VOLUME){
                 setSystemVolume(cur_cmd.params[0]);
@@ -126,32 +121,15 @@ void ExtProcess::onTimer(){
                 QString ssid = QString::fromUtf8(temp);
 
                 if(cur_wifi.ssid == ""){
+                    plog->write("[RETURN ERROR] Get Wifi IP : current SSID is null");
                     result.result = PROCESS_RETURN_ERROR;
                 }else{
+                    plog->write("[FUNCTION] Get Wifi IP : "+cur_wifi.ssid);
                     startProcess("nmcli con show "+cur_wifi.ssid);
                 }
-                checkTimer->start(1000);
+                checkTimer->start(2000);
             }else if(cur_cmd.cmd == PROCESS_CMD_GET_WIFI_LIST){
                 getWifiList();
-            }else if(cur_cmd.cmd == PROCESS_CMD_GET_WIFI_LIST_INFO){
-                if(cur_cmd.params[0] < wifi_list.size()){
-                    result.result = PROCESS_RETURN_DONE;
-                    memcpy(result.params,wifi_list[cur_cmd.params[0]].ssid.toUtf8(),sizeof(char)*100);
-
-                    if(wifi_list[cur_cmd.params[0]].ssid == "mobile_robot_mesh"){
-                        qDebug() << "inuse is " << wifi_list[cur_cmd.params[0]].inuse;
-                    }
-                    result.params2[0] = wifi_list[cur_cmd.params[0]].inuse;
-                    result.params2[1] = wifi_list[cur_cmd.params[0]].rate;
-                    result.params2[2] = wifi_list[cur_cmd.params[0]].level;
-                    result.params2[3] = wifi_list[cur_cmd.params[0]].security;
-                    result.params2[4] = wifi_list[cur_cmd.params[0]].discon_count;
-                    result.params2[5] = wifi_list[cur_cmd.params[0]].state;
-                    result.params2[6] = wifi_list[cur_cmd.params[0]].prev_state;
-                }else{
-//                    qDebug() << cur_cmd.params[0] << wifi_list.size();
-                    result.result = PROCESS_RETURN_ERROR;
-                }
             }else if(cur_cmd.cmd == PROCESS_CMD_CONNECT_WIFI){
                 char temp[100];
                 memcpy(temp,cur_cmd.params,sizeof(char)*100);
@@ -171,20 +149,18 @@ void ExtProcess::onTimer(){
                 QString dns = QString::fromUtf8(temp);
                 setWifiIP(ip, gateway, dns);
             }else if(cur_cmd.cmd == PROCESS_CMD_CHECK_CONNECTION){
-//                char temp[100];
-//                memcpy(temp,cur_cmd.params,sizeof(char)*100);
-//                QString ssid = QString::fromUtf8(temp);
-//                cur_wifi.ssid = ssid;
+                plog->write("[FUNCTION] Check Connection : "+cur_wifi.ssid);
                 startProcess("nmcli net con");
-//                startProcess("nmcli -f GENERAL.STATE con show "+ssid);
                 checkTimer->start(500);
             }else if(cur_cmd.cmd == PROCESS_CMD_GIT_PULL){
                 char temp[100];
                 memcpy(temp, cur_cmd.params,100);
+                plog->write("[FUNCTION] Git Pull : "+QString::fromUtf8(temp));
                 startProcessAt("git pull",QString::fromUtf8(temp));
             }else if(cur_cmd.cmd == PROCESS_CMD_GIT_RESET){
                 char temp[100];
                 memcpy(temp, cur_cmd.params,100);
+                plog->write("[FUNCTION] Git Reset : "+QString::fromUtf8(temp));
                 startProcessAt("git reset --hard origin/master",QString::fromUtf8(temp));
             }else if(cur_cmd.cmd == PROCESS_CMD_GIT_UPDATE){
 
@@ -192,6 +168,7 @@ void ExtProcess::onTimer(){
                 char temp[100];
                 memcpy(temp, cur_cmd.params,100);
                 QString path = QString::fromUtf8(temp);
+                plog->write("[FUNCTION] Zip : "+QString::fromUtf8(temp));
 
             }else if(cur_cmd.cmd == PROCESS_CMD_UNZIP){
                 char temp[100];
@@ -200,11 +177,17 @@ void ExtProcess::onTimer(){
                 char temp2[100];
                 memcpy(temp2, cur_cmd.params2,100);
                 QString folderpath = QString::fromUtf8(temp2);
+                plog->write("[FUNCTION] UnZip : "+QString::fromUtf8(temp)+"->"+QString::fromUtf8(temp2));
                 if(unzip(zippath, folderpath)){
+                    plog->write("[RETURN] UnZip : Done");
                     result.result = PROCESS_RETURN_DONE;
                 }else{
+                    plog->write("[RETURN ERROR] UnZip : Failed");
                     result.result = PROCESS_RETURN_ERROR;
                 }
+            }else{
+                plog->write("[RETURN UNKNOWN] Unknown Command : "+QString::number(cur_cmd.cmd));
+                result.result = PROCESS_RETURN_UNKNOWN;
             }
             set_return(result);
         }
@@ -212,9 +195,6 @@ void ExtProcess::onTimer(){
 }
 
 bool ExtProcess::unzip(QString zippath, QString folderpath){
-    Return temp_output;
-    temp_output.result = PROCESS_RETURN_DONE;
-    temp_output.command = cur_cmd.cmd;
     QFile zip(zippath);
     QFile folder(folderpath);
     if(zip.exists()){
@@ -225,16 +205,12 @@ bool ExtProcess::unzip(QString zippath, QString folderpath){
             }
             return true;
         }else{
-            qDebug() << "Extract Failed : " << zippath;
             return false;
-            temp_output.result = PROCESS_RETURN_ERROR;
         }
     }else{
-        qDebug() << "No Zip File Found : " << zippath;
+        plog->write("[FUNCTION] Unzip : No zip File ("+zippath+")");
         return false;
-        temp_output.result = PROCESS_RETURN_ERROR;
     }
-//    set_return(temp_output);
 }
 
 void ExtProcess::zip(QString folderpath, QString zippath){
@@ -242,28 +218,31 @@ void ExtProcess::zip(QString folderpath, QString zippath){
 }
 
 void ExtProcess::getSystemVolume(){
+    plog->write("[FUNCTION] Get System Volume");
     startProcess("amixer -D pulse sget Master");
 }
 
 void ExtProcess::getWifiList(){
     wifi_list.clear();
+    plog->write("[FUNCTION] Get Wifi List");
     startProcess("nmcli device wifi list");
 }
 
 void ExtProcess::setSystemVolume(int volume){
+    plog->write("[FUNCTION] Set System Volume : "+QString::number(volume));
     startProcess("amixer -D pulse sset Master "+QString::number(volume)+"%");
 }
 
 void ExtProcess::startProcess(QString cmd){
-    qDebug() << "startProcess : " << cmd;
     proc = new QProcess();
     proc->start(cmd);
+    plog->write("[PROCESS] Start Process : " + cmd);
     connect(proc,SIGNAL(readyReadStandardOutput()),this,SLOT(output()));
     connect(proc,SIGNAL(readyReadStandardError()),this,SLOT(error()));
 }
 
 void ExtProcess::startProcessAt(QString cmd, QString path){
-    qDebug() << "startProcessAt : " << cmd << path;
+    plog->write("[PROCESS] Start Process At "+path+" : " + cmd);
     proc = new QProcess();
     proc->setWorkingDirectory(path);
     proc->start(cmd);
@@ -277,15 +256,17 @@ void ExtProcess::timeout(){
     Return temp_output;
     temp_output.command = cur_cmd.cmd;
     temp_output.result = PROCESS_RETURN_ERROR;
+    plog->write("[RETURN ERROR] Timeout : " + QString::number(cur_cmd.cmd));
     memcpy(temp_output.params,cur_cmd.params,sizeof(char)*100);
     set_return(temp_output);
     proc->close();
     checkTimer->stop();
 }
+
 void ExtProcess::output(){
     checkTimer->stop();
     QString output = proc->readAllStandardOutput();
-//    qDebug() << "Output : " << output;
+    plog->write("[OUTPUT] "+QString::number(cur_cmd.cmd)+" : " + output);
     Return temp_output;
     temp_output.result = PROCESS_RETURN_DONE;
     temp_output.command = cur_cmd.cmd;
@@ -296,6 +277,7 @@ void ExtProcess::output(){
         QString percent = output.split("[")[1].split("]")[0];
         QString cur_volume = percent.split("%")[0];
         temp_output.params[0] = cur_volume.toInt();
+        plog->write("[RETURN] Get System Volume : "+cur_volume);
         set_return(temp_output);
         proc->close();
     }else if(cur_cmd.cmd == PROCESS_CMD_GET_WIFI_LIST){
@@ -360,11 +342,12 @@ void ExtProcess::output(){
             }
         }
 
-        Return result;
-        result.command = cur_cmd.cmd;
-        result.result = PROCESS_RETURN_DONE;
-        result.params[0] = wifi_list.size();
-        set_return(result);
+//        Return result;
+        temp_output.command = cur_cmd.cmd;
+        temp_output.result = PROCESS_RETURN_DONE;
+        temp_output.params[0] = wifi_list.size();
+        plog->write("[RETURN] Get Wifi List : "+QString::number(wifi_list.size()));
+        set_return(temp_output);
         proc->close();
 
 
@@ -408,6 +391,7 @@ void ExtProcess::output(){
             memcpy(temp_output.params, cur_wifi.ip.toUtf8(),sizeof(char)*100);
             memcpy(temp_output.params2, cur_wifi.gateway.toUtf8(),sizeof(char)*100);
             memcpy(temp_output.params3, cur_wifi.dns.toUtf8(),sizeof(char)*100);
+            plog->write("[RETURN] Get Wifi IP : "+cur_wifi.ip+", "+cur_wifi.gateway+", "+cur_wifi.dns);
             set_return(temp_output);
             proc->close();
         }
@@ -416,64 +400,104 @@ void ExtProcess::output(){
         for(int i=0; i<outputs.size(); i++){
             if(outputs[i] == "successfully"){
                 cur_wifi.connection = true;
-                qDebug() << "[SETTING] WIFI CONNECT SUCCESS";
+                plog->write("[RETURN] Connect Wifi Success : "+cur_wifi.ssid);
                 memcpy(temp_output.params, cur_cmd.params, 100);
-                set_return(temp_output);
+                break;
             }else if(outputs[i] == "failed:"){
                 temp_output.result = PROCESS_RETURN_ERROR;
                 cur_wifi.connection = false;
                 memcpy(temp_output.params,cur_cmd.params,100);
-                set_return(temp_output);
+                plog->write("[RETURN ERROR] Connect Wifi Fail : "+cur_wifi.ssid);
+                break;
+            }else{
+                plog->write("[RETURN UNKNOWN] Connect Wifi : "+cur_wifi.ssid);
+                temp_output.result = PROCESS_RETURN_UNKNOWN;
+                cur_wifi.connection = false;
             }
         }
+        set_return(temp_output);
         proc->close();
     }else if(cur_cmd.cmd == PROCESS_CMD_SET_WIFI_IP){
         //    wifi_process->execute(exe_str);
         //    wifi_process->waitForStarted();
         //    wifi_process->start("nmcli con up "+probot->wifi_ssd);
         //    wifi_process->waitForStarted();
+        char temp[100];
+        memcpy(temp,cur_cmd.params,sizeof(char)*100);
+        QString ip = QString::fromUtf8(temp);
+        memcpy(temp,cur_cmd.params2,sizeof(char)*100);
+        QString gateway = QString::fromUtf8(temp);
+        memcpy(temp,cur_cmd.params3,sizeof(char)*100);
+        QString dns = QString::fromUtf8(temp);
+        cur_wifi.ip = ip;
+        cur_wifi.gateway = gateway;
+        cur_wifi.dns = dns;
         memcpy(temp_output.params,cur_cmd.params,100);
         memcpy(temp_output.params2,cur_cmd.params2,100);
         memcpy(temp_output.params3,cur_cmd.params3,100);
+        plog->write("[RETURN] Set Wifi IP : " +cur_wifi.ssid+", "+cur_wifi.ip+", "+cur_wifi.gateway+", "+cur_wifi.dns);
         set_return(temp_output);
         proc->close();
     }else if(cur_cmd.cmd == PROCESS_CMD_CHECK_CONNECTION){
         QStringList tt = output.split("\n");
         memcpy(temp_output.params, tt[0].toUtf8(),100);
+        plog->write("[RETURN] Check Connection : Success "+cur_wifi.ssid);
         set_return(temp_output);
         proc->close();
     }else if(cur_cmd.cmd == PROCESS_CMD_GIT_PULL){
-
+        plog->write("[RETURN] Git Pull : Success ");
+        set_return(temp_output);
+        proc->close();
+    }else if(cur_cmd.cmd == PROCESS_CMD_GIT_RESET){
+        plog->write("[RETURN] Git Reset : Success ");
+        set_return(temp_output);
+        proc->close();
+    }else if(cur_cmd.cmd == PROCESS_CMD_GIT_UPDATE){
+        plog->write("[RETURN] Git Update : Success ");
+        set_return(temp_output);
+        proc->close();
     }else if(cur_cmd.cmd == PROCESS_CMD_ZIP){
-
+        plog->write("[RETURN] Zip : Success ");
+        set_return(temp_output);
+        proc->close();
     }else if(cur_cmd.cmd == PROCESS_CMD_UNZIP){
-
+        plog->write("[RETURN] UnZip : Success ");
+        set_return(temp_output);
+        proc->close();
+    }else{
+        plog->write("[RETURN] But Command Unknown : "+QString::number(cur_cmd.cmd));
+        set_return(temp_output);
+        proc->close();
     }
 
 }
 
 void ExtProcess::error(){
     checkTimer->stop();
-    QString error = proc->readAllStandardOutput();
-    qDebug() << "Error : " << error;
+    QString error = proc->readAllStandardError();
+    plog->write("[ERROR] "+QString::number(cur_cmd.cmd)+" : " + error);
     Return temp;
     temp.result = PROCESS_RETURN_ERROR;
     temp.command = cur_cmd.cmd;
     if(cur_cmd.cmd == PROCESS_CMD_CONNECT_WIFI){
         cur_wifi.connection = false;
         memcpy(temp.params,cur_cmd.params,100);
-
+        plog->write("[RETURN ERROR] Connect Wifi : " + cur_wifi.ssid);
     }else if(cur_cmd.cmd == PROCESS_CMD_SET_WIFI_IP){
         if(cur_wifi.connection){
             cur_wifi.connection = false;
+            plog->write("[RETURN ERROR] Set Wifi IP (Disconnected) : " + cur_wifi.ssid + ", " + cur_wifi.ip);
             startProcess("nmcli con up "+cur_wifi.ssid);
         }else{
+            plog->write("[RETURN ERROR] Set Wifi IP Failed : " + cur_wifi.ssid + ", " + cur_wifi.ip);
             set_return(temp);
         }
     }else if(cur_cmd.cmd == PROCESS_CMD_GIT_PULL){
-
+        plog->write("[RETURN ERROR] Git Pull : failed");
     }else if(cur_cmd.cmd == PROCESS_CMD_GIT_RESET){
-
+        plog->write("[RETURN ERROR] Git Reset : failed");
+    }else{
+        plog->write("[RETURN UNKNOWN] Unknown Command Error : "+QString::number(cur_cmd.cmd));
     }
     set_return(temp);
     proc->close();
@@ -483,9 +507,7 @@ void ExtProcess::set_return(Return cmd){
     shm_return.lock();
     cmd.tick = ++tick;
     memcpy((char*)shm_return.data(), &cmd, sizeof(ExtProcess::Command));
-
     qDebug() << "Set Return : " << cmd.command << cmd.result << cmd.params[0];
-
     shm_return.unlock();
 }
 ExtProcess::Return ExtProcess::get_return(){
@@ -493,7 +515,6 @@ ExtProcess::Return ExtProcess::get_return(){
     shm_return.lock();
     memcpy(&res, (char*)shm_return.constData(), sizeof(ExtProcess::Return));
     shm_return.unlock();
-
     return res;
 }
 
@@ -506,6 +527,7 @@ ExtProcess::Command ExtProcess::get_command(){
 }
 
 void ExtProcess::connectWifi(QString ssid, QString passwd){
+    plog->write("[FUNCTION] Connect Wifi : "+ssid+","+passwd);
     if(passwd == ""){
         startProcess("nmcli --a device wifi connect "+ssid);
     }else{
@@ -514,7 +536,7 @@ void ExtProcess::connectWifi(QString ssid, QString passwd){
 }
 
 void ExtProcess::setWifiIP(QString ip, QString gateway, QString dns){
-    qDebug() << "[SETTING] SET WIFI IP "+cur_wifi.ssid+" -> "+ip+", "+gateway+", "+dns;
+    plog->write("[FUNCTION] Set Wifi IP : "+cur_wifi.ssid+" -> "+ip+", "+gateway+", "+dns);
     QString exe_str = "nmcli con mod "+cur_wifi.ssid;
     exe_str += " ipv4.address "+ip+"/24";
     exe_str += " ipv4.dns "+dns;
@@ -522,9 +544,4 @@ void ExtProcess::setWifiIP(QString ip, QString gateway, QString dns){
     exe_str += " ipv4.method manual";
     startProcess(exe_str);
     startProcess("nmcli con up "+cur_wifi.ssid);
-    //    wifi_process->execute(exe_str);
-    //    wifi_process->waitForStarted();
-    //    wifi_process->start("nmcli con up "+probot->wifi_ssd);
-    //    wifi_process->waitForStarted();
-    //  proc->close();
 }

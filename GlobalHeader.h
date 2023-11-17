@@ -3,8 +3,9 @@
 
 #include <QVector>
 #include <QString>
+#include "Logger.h"
 
-
+extern Logger *plog;
 typedef struct{
     bool inuse;
     QString ssid;

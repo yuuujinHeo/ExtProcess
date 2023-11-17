@@ -17,6 +17,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 SOURCES += \
         ExtProcess.cpp \
         main.cpp\
+    Logger.cpp \
     quazip/JlCompress.cpp \
     quazip/qioapi.cpp \
     quazip/quaadler32.cpp \
@@ -45,6 +46,7 @@ LIBS += -lz
 HEADERS += \
     ExtProcess.h \
     GlobalHeader.h \
+    Logger.h \
     quazip/JlCompress.h \
     quazip/ioapi.h \
     quazip/minizip_crypt.h \
