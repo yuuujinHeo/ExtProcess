@@ -15,6 +15,11 @@ Logger::Logger()
     file->setFileName(filename);
     file->open(QIODevice::Append | QIODevice::Text);
     prev_str = "";
+
+    QDir dir(QDir::homePath()+"/RB_MOBILE/log/extproc_log");
+    if(!dir.exists()){
+        dir.mkdir(dir.path());
+    }
 }
 
 void Logger::write(const QString str, bool print){
@@ -70,6 +75,6 @@ void Logger::write_space(){
 }
 
 QString Logger::getFileName(){
-    QString tempname = QDir::homePath()+"/RB_MOBILE/log/extproc_log/"+QDateTime::currentDateTime().toString("/yyyy_MM_dd") + ".txt";
+    QString tempname = QDir::homePath()+"/RB_MOBILE/log/extproc_log"+QDateTime::currentDateTime().toString("/yyyy_MM_dd") + ".txt";
     return tempname;
 }

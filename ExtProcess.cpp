@@ -121,7 +121,7 @@ void ExtProcess::onTimer(){
                 QString ssid = QString::fromUtf8(temp);
 
                 if(cur_wifi.ssid == ""){
-                    plog->write("[RETURN ERROR] Get Wifi IP : current SSID is null");
+                    plog->write("[RETURN ERROR] IP : current SSID is null");
                     result.result = PROCESS_RETURN_ERROR;
                 }else{
                     plog->write("[FUNCTION] Get Wifi IP : "+cur_wifi.ssid);
@@ -239,6 +239,7 @@ void ExtProcess::startProcess(QString cmd){
     plog->write("[PROCESS] Start Process : " + cmd);
     connect(proc,SIGNAL(readyReadStandardOutput()),this,SLOT(output()));
     connect(proc,SIGNAL(readyReadStandardError()),this,SLOT(error()));
+//    connect(proc,SIGNAL(readyRead()),this,SLOT(error()));
 }
 
 void ExtProcess::startProcessAt(QString cmd, QString path){
@@ -400,6 +401,7 @@ void ExtProcess::output(){
         for(int i=0; i<outputs.size(); i++){
             if(outputs[i] == "successfully"){
                 cur_wifi.connection = true;
+                temp_output.result = PROCESS_RETURN_DONE;
                 plog->write("[RETURN] Connect Wifi Success : "+cur_wifi.ssid);
                 memcpy(temp_output.params, cur_cmd.params, 100);
                 break;
@@ -410,7 +412,7 @@ void ExtProcess::output(){
                 plog->write("[RETURN ERROR] Connect Wifi Fail : "+cur_wifi.ssid);
                 break;
             }else{
-                plog->write("[RETURN UNKNOWN] Connect Wifi : "+cur_wifi.ssid);
+//                plog->write("[RETURN UNKNOWN] Connect Wifi : "+cur_wifi.ssid);
                 temp_output.result = PROCESS_RETURN_UNKNOWN;
                 cur_wifi.connection = false;
             }
@@ -482,7 +484,16 @@ void ExtProcess::error(){
     if(cur_cmd.cmd == PROCESS_CMD_CONNECT_WIFI){
         cur_wifi.connection = false;
         memcpy(temp.params,cur_cmd.params,100);
+        QStringList errors = error.split(" ");
+        for(int i=0; i<errors.size(); i++){
+            if(errors[i] == "[sudo]"){
+                proc->write("rainbow\n");
+                return;
+            }
+        }
         plog->write("[RETURN ERROR] Connect Wifi : " + cur_wifi.ssid);
+        set_return(temp);
+        proc->close();
     }else if(cur_cmd.cmd == PROCESS_CMD_SET_WIFI_IP){
         if(cur_wifi.connection){
             cur_wifi.connection = false;
@@ -492,15 +503,22 @@ void ExtProcess::error(){
             plog->write("[RETURN ERROR] Set Wifi IP Failed : " + cur_wifi.ssid + ", " + cur_wifi.ip);
             set_return(temp);
         }
+        set_return(temp);
+        proc->close();
     }else if(cur_cmd.cmd == PROCESS_CMD_GIT_PULL){
         plog->write("[RETURN ERROR] Git Pull : failed");
+        set_return(temp);
+        proc->close();
     }else if(cur_cmd.cmd == PROCESS_CMD_GIT_RESET){
         plog->write("[RETURN ERROR] Git Reset : failed");
+        set_return(temp);
+        proc->close();
     }else{
         plog->write("[RETURN UNKNOWN] Unknown Command Error : "+QString::number(cur_cmd.cmd));
+
+        set_return(temp);
+        proc->close();
     }
-    set_return(temp);
-    proc->close();
 }
 
 void ExtProcess::set_return(Return cmd){
@@ -529,9 +547,9 @@ ExtProcess::Command ExtProcess::get_command(){
 void ExtProcess::connectWifi(QString ssid, QString passwd){
     plog->write("[FUNCTION] Connect Wifi : "+ssid+","+passwd);
     if(passwd == ""){
-        startProcess("nmcli --a device wifi connect "+ssid);
+        startProcess("sudo -S nmcli --a device wifi connect "+ssid);
     }else{
-        startProcess("nmcli --a device wifi connect "+ssid+" password "+passwd);
+        startProcess("sudo -S nmcli --a device wifi connect "+ssid+" password "+passwd);
     }
 }
 
